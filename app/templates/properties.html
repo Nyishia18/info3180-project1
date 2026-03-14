@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Properties{% endblock %}
+
+{% block main %}
+<div class="container mt-5">
+    <h1 class="mb-4 fw-bold">Properties</h1>
+    
+    <div class="row">
+        {% if properties %}
+            {% for property in properties %}
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 border-0 shadow-sm overflow-hidden">
+                    <img src="{{ url_for('static', filename='uploads/' + property.photo) }}" 
+                         class="card-img-top" 
+                         alt="{{ property.title }}" 
+                         style="height: 220px; object-fit: cover;">
+                    
+                    <div class="card-body">
+                        <h5 class="card-title fw-bold">{{ property.title }}</h5>
+                        <p class="text-muted mb-2">
+                            <i class="bi bi-geo-alt"></i> {{ property.location }}
+                        </p>
+                        
+                        <div class="mb-3">
+                            <span class="badge rounded-pill bg-primary px-3 py-2">
+                                ${{ "{:,.0f}".format(property.price | float) if property.price else "0" }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-footer p-0 border-0">
+                        <a href="{{ url_for('property_detail', propertyid=property.id) }}" 
+                           class="btn btn-success w-100 rounded-0 py-2">
+                           View Property
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info text-center">
+                    No properties available at the moment.
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

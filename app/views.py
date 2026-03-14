@@ -5,13 +5,36 @@ Werkzeug Documentation:  https://werkzeug.palletsprojects.com/
 This file contains the routes for your application.
 """
 
-from app import app
-from flask import render_template, request, redirect, url_for
+import os
+from flask import render_template, redirect, url_for, flash, request
+from werkzeug.utils import secure_filename
+
+from . import app, db
+from .models import Property
+from .forms import PropertyForm
 
 
-###
-# Routing for your application.
-###
+# ---------------------------
+# File Upload Configuration
+# ---------------------------
+
+UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+# Create uploads folder if it does not exist
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+
+def allowed_file(filename):
+    """Check if uploaded file has an allowed extension"""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# ---------------------------
+# Routes
+# ---------------------------
 
 @app.route('/')
 def home():
@@ -25,33 +48,84 @@ def about():
     return render_template('about.html', name="Mary Jane")
 
 
-###
-# The functions below should be applicable to all Flask apps.
-###
+@app.route('/properties')
+def properties():
+    """Fetch all records from the Property table and render them."""
+    properties_list = Property.query.all()
+    return render_template('properties.html', properties=properties_list)
 
-# Display Flask WTF errors as Flash messages
+
+@app.route('/properties/create', methods=['GET', 'POST'])
+def create_property():
+    """Create a new property"""
+    form = PropertyForm()
+
+    if form.validate_on_submit():
+        photo_file = form.photo.data
+
+        if photo_file and allowed_file(photo_file.filename):
+            filename = secure_filename(photo_file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            photo_file.save(filepath)
+
+            new_property = Property(
+                title=form.title.data,
+                bedrooms=form.bedrooms.data,
+                bathrooms=form.bathrooms.data,
+                location=form.location.data,
+                price=form.price.data,
+                property_type=form.property_type.data,
+                description=form.description.data,
+                photo=filename
+            )
+
+            db.session.add(new_property)
+            db.session.commit()
+
+            flash("Property added successfully!", "success")
+            return redirect(url_for('properties'))
+
+        else:
+            flash("Invalid file type. Please upload png, jpg, jpeg or gif.", "danger")
+
+    # Only flash errors if they exist
+    if form.errors:
+        flash_errors(form)
+
+    return render_template('create_property.html', form=form)
+
+
+@app.route('/properties/<int:propertyid>')
+def property_detail(propertyid):
+    """Fetch one property by its ID or return 404 if not found"""
+    property_item = Property.query.get_or_404(propertyid)
+    return render_template('property_detail.html', property=property_item)
+
+
+# ---------------------------
+# Helper Functions
+# ---------------------------
+
 def flash_errors(form):
+    """Display Flask-WTF errors as flash messages"""
     for field, errors in form.errors.items():
         for error in errors:
-            flash(u"Error in the %s field - %s" % (
-                getattr(form, field).label.text,
-                error
-            ), 'danger')
+            flash(
+                f"Error in the {getattr(form, field).label.text} field - {error}",
+                "danger"
+            )
+
 
 @app.route('/<file_name>.txt')
 def send_text_file(file_name):
-    """Send your static text file."""
+    """Send static text files"""
     file_dot_text = file_name + '.txt'
     return app.send_static_file(file_dot_text)
 
 
 @app.after_request
 def add_header(response):
-    """
-    Add headers to both force latest IE rendering engine or Chrome Frame,
-    and also tell the browser not to cache the rendered page. If we wanted
-    to we could change max-age to 600 seconds which would be 10 minutes.
-    """
+    """Disable caching"""
     response.headers['X-UA-Compatible'] = 'IE=Edge,chrome=1'
     response.headers['Cache-Control'] = 'public, max-age=0'
     return response
