@@ -12,7 +12,7 @@ app = Flask(__name__, template_folder='templates')
 
 # Configuration settings
 app.config.from_object(Config)
-app.config['SECRET_KEY'] = 'secretkey'
+app.config['SECRET_KEY'] = '2ba5f54d95eafe086bfce7a333a5f41b983cace47044d00f'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://project1:info3180project1@localhost/propertydb'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

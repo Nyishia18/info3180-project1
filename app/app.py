@@ -6,7 +6,7 @@ from flask import render_template, request, redirect, url_for, flash
 import os
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key_here'
+app.config['SECRET_KEY'] = '2ba5f54d95eafe086bfce7a333a5f41b983cace47044d00f'
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://project1:info3180project1@localhost/propertydb'
